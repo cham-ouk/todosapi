@@ -1,0 +1,7 @@
+Todos project
+
+1. create a new task
+2. update a task
+3. delete a task
+4. read a task
+5. read a list of task
