@@ -4,6 +4,8 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+app.config['JSON_SORT_KEYS'] = False
+
 
 @app.route("/todos", methods=['GET'])
 def get_todos():
@@ -17,17 +19,61 @@ def post_todo():
     id = len(my_todos) + 1
 
     client_payload = request.json
-    # 2020-02-05 19:26:32
-    client_payload["id"] = id
-    created_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    client_payload["created_timestamp"] = created_timestamp
-    client_payload["updated_timestamp"] = created_timestamp
 
-    my_todos.append(client_payload)
+    created_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    temp_dict = dict()
+    temp_dict["id"] = id
+    temp_dict["task"] = client_payload["task"]
+    temp_dict["status"] = client_payload["status"]
+    temp_dict["created_timestamp"] = created_timestamp
+    temp_dict["updated_timestamp"] = created_timestamp
+
+    my_todos.append(temp_dict)
 
     write_json("./todos.json", my_todos)
 
     return "Todo created"
+
+
+@app.route("/todo/<todo_id>", methods=['GET'])
+def get_todo_by_id(todo_id):
+    my_todos = load_json('./todos.json')
+
+    for todo in my_todos:
+        if 'id' in todo and todo['id'] == int(todo_id):
+            return jsonify(todo)
+
+    return '{id} does not exist in the database'.format(id=todo_id)
+
+
+@app.route("/todo/<todo_id>", methods=['DELETE'])
+def delete_todo_by_id(todo_id):
+    my_todos = load_json('./todos.json')
+    print(my_todos)
+    for todo in my_todos:
+        if 'id' in todo and todo['id'] == int(todo_id):
+            my_todos.remove(todo)
+
+    write_json("./todos.json", my_todos)
+    return 'deleted'
+
+
+@app.route("/todo/<todo_id>", methods=['PUT'])
+def update_todo_by_id(todo_id):
+    client_payload = request.json
+
+    my_todos = load_json('./todos.json')
+    created_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    for todo in my_todos:
+        if 'id' in todo and todo['id'] == int(todo_id):
+            idx = my_todos.index(todo)
+            todo["status"] = client_payload["status"]
+            todo["updated_timestamp"] = created_timestamp
+            my_todos[idx] = todo
+
+    write_json("./todos.json", my_todos)
+    return 'Updated'
 
 
 def load_json(file_path):
