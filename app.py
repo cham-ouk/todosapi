@@ -20,6 +20,18 @@ def post_todo():
 
     client_payload = request.json
 
+    if 'task' not in client_payload or 'status' not in client_payload:
+        return 'task and status are required parameters', 400
+
+    if not isinstance(client_payload['task'], str):
+        return 'task must be a string', 400
+
+    if not isinstance(client_payload['status'], str):
+        return 'status must be a string', 400
+
+    if client_payload['status'] not in ['Initiated',  'Pending',  'InProgress', 'Completed']:
+        return 'status value must be [Initiated | Pending | InProgress | Completed] ', 400
+
     created_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     temp_dict = dict()
@@ -40,6 +52,9 @@ def post_todo():
 def get_todo_by_id(todo_id):
     my_todos = load_json('./todos.json')
 
+    if not todo_id.isdigit():
+        return '{id} is not an integer data type', 400
+
     for todo in my_todos:
         if 'id' in todo and todo['id'] == int(todo_id):
             return jsonify(todo)
@@ -50,7 +65,7 @@ def get_todo_by_id(todo_id):
 @app.route("/todo/<todo_id>", methods=['DELETE'])
 def delete_todo_by_id(todo_id):
     my_todos = load_json('./todos.json')
-    print(my_todos)
+
     for todo in my_todos:
         if 'id' in todo and todo['id'] == int(todo_id):
             my_todos.remove(todo)
@@ -64,12 +79,12 @@ def update_todo_by_id(todo_id):
     client_payload = request.json
 
     my_todos = load_json('./todos.json')
-    created_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     for todo in my_todos:
         if 'id' in todo and todo['id'] == int(todo_id):
             idx = my_todos.index(todo)
             todo["status"] = client_payload["status"]
-            todo["updated_timestamp"] = created_timestamp
+            todo["updated_timestamp"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             my_todos[idx] = todo
 
     write_json("./todos.json", my_todos)
